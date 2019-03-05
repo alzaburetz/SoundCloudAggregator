@@ -18,13 +18,13 @@ var (
 	mu      sync.Mutex
 	cookie  string
 	cookies []string
-	client = "?client_id=Zju0N4zmkkZ60kMBebep9nP703ozMTpx"
+	client = "?client_id="
 	agent string
 )
 
 //struct for encoding credentials
 type Cred struct {
-	clientID string `json:"client_id"`
+	ClientID string `json:"client_id"`
 	Agent string `json:"user_agent"`
 }
 
@@ -32,8 +32,11 @@ type Cred struct {
 func getInfo() {
 	var credentials Cred
 	input, _ := ioutil.ReadFile("credentials.json")
-	json.Unmarshal(input,&credentials)
-	client += credentials.clientID
+	err := json.Unmarshal(input,&credentials)
+	if err != nil {
+		log.Fatal(err)
+	}
+	client += credentials.ClientID
 	agent = credentials.Agent
 }
 
@@ -84,9 +87,9 @@ func create(sc *models.SCUser, i int64) {
 //get track by id
 func getTrack(id int64) {
 	var track models.Track
-	req, er := http.Get("https://api.soundcloud.com/tracks/" + strconv.FormatInt(id, 10) + client)
-	if er != nil {
-		log.Println("Oops")
+	req, err := http.Get("https://api.soundcloud.com/tracks/" + strconv.FormatInt(id, 10) + client)
+	if err != nil {
+		log.Println(err)
 	}
 	//set header to our agent and random cookie
 	req.Header.Set("User-Agent", agent)
@@ -97,7 +100,6 @@ func getTrack(id int64) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println(track.Genre)
 		if track.Downloadable {
 			_ = os.Mkdir(track.Genre + "-genre", 0777)
 			req, _ := http.Get(track.DownloadURL + client)
@@ -112,15 +114,13 @@ func getTrack(id int64) {
 
 func main() {
 	//fetch cookie. 20 for starters
-	mu.Lock()
+	getInfo()
 	for i := 0; i < 20; i++ {
 		c, _ := http.Get("https://soundcloud.com")
-		c.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36")
+		c.Header.Set("User-Agent", agent)
 		cookie = c.Header.Get("Set-Cookie")
 		cookies = append(cookies,cookie)
 	}
-	mu.Unlock()
-	getInfo()
 	var i int64
 	for i = 0; i < 1000; i++ {
 		getTrack(i)
