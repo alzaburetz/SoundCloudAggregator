@@ -18,7 +18,7 @@ var (
 	mu      sync.Mutex
 	cookie  string
 	cookies []string
-	client = "?client_id=Zju0N4zmkkZ60kMBebep9nP703ozMTpx"
+	client = "?client_id="
 	agent string
 )
 
