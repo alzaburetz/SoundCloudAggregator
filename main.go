@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -130,6 +131,19 @@ func Download(track models.Track) {
 	mu.Unlock()
 }
 
+func Playlist(dir string) {
+	file, _ := os.OpenFile(dir + ".pls",os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	files, _ := ioutil.ReadDir(dir)
+	file.WriteString("[playlist]\nNumberOfEntries=" + strconv.Itoa(len(files)) + "\n")
+	defer file.Close()
+	for key, f := range files {
+		filep, _ := filepath.Abs(dir + "/" + f.Name())
+
+		file.WriteString("File" + strconv.Itoa(key+1) + "=" + filep + "\nTitle" + strconv.Itoa(key+1) + "=" + f.Name() + "\n")
+	}
+
+}
+
 func main() {
 	//fetch cookie. 20 for starters
 	getInfo()
@@ -140,7 +154,9 @@ func main() {
 		cookies = append(cookies, cookie)
 	}
 	var i int64
-	for i = 290; i < 1000; i++ {
+	for i = 290; i < 500; i++ {
 		getTrack(i)
 	}
+
+	Playlist("Electronic-genre")
 }
