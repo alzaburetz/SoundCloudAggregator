@@ -1,9 +1,12 @@
 # About
+
+<image src="https://i.imgur.com/1dLXuik.png">
 This project is created to accumulate all possibilities to get data from SoundCloud API *without* API-key and registration of your app.
 
 Currently it's kinda sketchy, **but** it works!
 
 ## To test this
+* [Go](https://github.com/alzaburetz/restrictor/blob/master/README.md)
 * Retrieve client_id from your browser to .json file
 * Get User-agent to .json file
 
@@ -16,6 +19,7 @@ Currently it's kinda sketchy, **but** it works!
 
 Currently it only can download tracks and sort them by genre, so just type
 ```bash
+go get -u github.com/mikkyang/id3-go
 go run main.go
 ```
 
