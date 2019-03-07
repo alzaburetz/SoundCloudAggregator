@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -104,10 +106,20 @@ func getTrack(id int64) {
 		}
 		if track.Downloadable {
 			log.Printf("%s, %s, %s, %d", track.Genre, track.OriginalFormat, track.Title, track.ID)
-			go Download(track)
+			track.Title = changeName(track.Title)
+			track.Genre = changeName(track.Genre)
+			Download(track)
 		}
 	}
 
+}
+
+func changeName(str string) string {
+	if strings.Contains(str, "/") {
+		slash := strings.Index(str, "/")
+		str = str[0:slash-1] + str[slash+1:]
+	}
+	return str
 }
 
 func Download(track models.Track) {
@@ -132,7 +144,7 @@ func Download(track models.Track) {
 }
 
 func Playlist(dir string) {
-	file, _ := os.OpenFile(dir + ".pls",os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	file, _ := os.OpenFile(dir+".pls", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	files, _ := ioutil.ReadDir(dir)
 	file.WriteString("[playlist]\nNumberOfEntries=" + strconv.Itoa(len(files)) + "\n")
 	defer file.Close()
@@ -154,9 +166,15 @@ func main() {
 		cookies = append(cookies, cookie)
 	}
 	var i int64
-	for i = 290; i < 500; i++ {
+	for i = 3866; i < 5000; i++ {
 		getTrack(i)
 	}
+	directories, _ := ioutil.ReadDir("./")
+	for _, directory := range directories {
+		matched, _ := regexp.Match("-genre", []byte(directory.Name()))
+		if matched {
+			Playlist(directory.Name())
+		}
+	}
 
-	Playlist("Electronic-genre")
 }
