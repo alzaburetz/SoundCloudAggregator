@@ -1,12 +1,11 @@
 package main
 
 import (
-	"./models"
 	"encoding/json"
+	"github.com/alzaburetz/SoundCloud/models"
 	"github.com/mikkyang/id3-go"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 //global variables, some not used yet
@@ -45,74 +43,6 @@ func getInfo() {
 }
 
 //get mil users with a starter id
-func getUsers(n int64) {
-	var user models.SCUser
-	for i := n; i < n+999999; i++ {
-		c := http.Client{
-			Timeout: 10 * time.Second,
-		}
-		req, _ := c.Get("https://api.soundcloud.com/users/" + strconv.FormatInt(i, 10) + client)
-
-		resp := req.Body
-		defer func() {
-			err := resp.Close()
-			if err != nil {
-				log.Println(err.Error())
-			}
-		}()
-
-		if req.StatusCode == 200 || req.StatusCode == 404 {
-			if req.StatusCode == 404 {
-				continue
-			} else {
-				log.Println(i)
-			}
-		} else {
-			log.Fatal("Blocked\n")
-		}
-		bytes, _ := ioutil.ReadAll(resp)
-		json.Unmarshal(bytes, &user)
-		create(&user, i)
-		log.Println(string(bytes))
-	}
-}
-
-//creates file with user information
-func create(sc *models.SCUser, i int64) {
-	mu.Lock()
-	data, _ := json.Marshal(sc)
-	err := ioutil.WriteFile(strconv.FormatInt(i, 10)+".json", data, 0666)
-	if err != nil {
-		log.Printf("%v", err)
-	}
-	mu.Unlock()
-}
-
-//get track by id
-func getTrack(id int64) {
-	var track models.Track
-	req, err := http.Get("https://api.soundcloud.com/tracks/" + strconv.FormatInt(id, 10) + client)
-	if err != nil {
-		log.Println(err)
-	}
-	//set header to our agent and random cookie
-	req.Header.Set("User-Agent", agent)
-	req.Header.Set("Cookie", cookies[rand.Intn(19)])
-	if req.StatusCode != 404 {
-		bytess, err := ioutil.ReadAll(req.Body)
-		json.Unmarshal(bytess, &track)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if track.Downloadable {
-			log.Printf("%s, %s, %s, %d", track.Genre, track.OriginalFormat, track.Title, track.ID)
-			track.Title = changeName(track.Title)
-			track.Genre = changeName(track.Genre)
-			Download(track)
-		}
-	}
-
-}
 
 func changeName(str string) string {
 	if strings.Contains(str, "/") {
@@ -165,9 +95,11 @@ func main() {
 		cookie = c.Header.Get("Set-Cookie")
 		cookies = append(cookies, cookie)
 	}
+	os.Setenv("CLIENT", client)
+	os.Setenv("AGENT", agent)
 	var i int64
-	for i = 3866; i < 5000; i++ {
-		getTrack(i)
+	for i = 0; i < 50000; i++ {
+		fetchTrack(i)
 	}
 	directories, _ := ioutil.ReadDir("./")
 	for _, directory := range directories {
